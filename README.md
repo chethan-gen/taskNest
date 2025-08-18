@@ -49,6 +49,7 @@
 ### 🛠️ Tech Stack (Recommended)
 
 * **Frontend**: HTML, CSS, JS 
+* **Backend**: Express.js
 * **Storage**: LocalStorage (MVP) → Firebase (Stretch goal)
 * **Deployment**: Netlify / Vercel (easy CI/CD from GitHub)
 
