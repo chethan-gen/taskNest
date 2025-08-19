@@ -691,9 +691,34 @@ class TaskManager {
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize authentication manager
-  window.authManager = new AuthManager();
+  // Show loading screen initially
+  showLoadingScreen();
+
+  // Initialize authentication manager after a brief delay
+  setTimeout(() => {
+    window.authManager = new AuthManager();
+    hideLoadingScreen();
+  }, 2000); // Show loading for 2 seconds
 });
+
+// Loading screen functions
+function showLoadingScreen() {
+  const loadingScreen = document.getElementById('loading-screen');
+  if (loadingScreen) {
+    loadingScreen.classList.remove('hidden');
+  }
+}
+
+function hideLoadingScreen() {
+  const loadingScreen = document.getElementById('loading-screen');
+  if (loadingScreen) {
+    loadingScreen.classList.add('hidden');
+    // Remove from DOM after transition
+    setTimeout(() => {
+      loadingScreen.style.display = 'none';
+    }, 500);
+  }
+}
 
 // Add CSS animations for smooth interactions
 const style = document.createElement('style');
