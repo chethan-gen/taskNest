@@ -1,11 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo List</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    
+  <main class="todo-app">
+    <header class="app-header">
+      <h1 class="gradient-text">Todo List</h1>
+      <p class="subtitle">Organize your day.</p>
+    </header>
+
+    <section class="task-input-section">
+      <form id="task-form">
+        <input
+          type="text"
+          id="task-input"
+          placeholder="What needs to be done?"
+          aria-label="Task input"
+          required
+        />
+        <button type="submit" class="gradient-button">Add Task</button>
+      </form>
+    </section>
+
+    <section class="task-list-section">
+      <div class="empty-state" id="empty-state">
+        <img src="https://i.postimg.cc/sfcJnrHX/notepad.png" alt="Notepad with pencil icon" />
+        <p class="no-tasks">No tasks yet</p>
+        <p class="add-prompt">Add your first task above!</p>
+      </div>
+
+      <ul id="task-list" class="task-list" hidden></ul>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
