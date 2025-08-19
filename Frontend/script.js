@@ -1,16 +1,381 @@
+// Authentication System
+class AuthManager {
+  constructor() {
+    this.currentUser = null;
+    this.initializeAuth();
+  }
+
+  initializeAuth() {
+    // Check if user is logged in
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      this.currentUser = JSON.parse(savedUser);
+      this.showDashboard();
+    } else {
+      this.showLandingPage();
+    }
+
+    this.initializeAuthEventListeners();
+  }
+
+  initializeAuthEventListeners() {
+    // Signup form
+    const signupForm = document.getElementById('signup-form');
+    if (signupForm) {
+      signupForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleSignup();
+      });
+    }
+
+    // Login form
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleLogin();
+      });
+    }
+  }
+
+  handleSignup() {
+    const submitBtn = document.querySelector('#signup-form .auth-button');
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const confirmPassword = document.getElementById('signup-confirm-password').value;
+
+    // Clear previous errors
+    this.clearFormErrors('signup-form');
+
+    // Validation
+    let hasErrors = false;
+
+    if (!name) {
+      this.showFieldError('signup-name', 'Name is required');
+      hasErrors = true;
+    }
+
+    if (!email) {
+      this.showFieldError('signup-email', 'Email is required');
+      hasErrors = true;
+    } else if (!this.isValidEmail(email)) {
+      this.showFieldError('signup-email', 'Please enter a valid email address');
+      hasErrors = true;
+    }
+
+    if (!password) {
+      this.showFieldError('signup-password', 'Password is required');
+      hasErrors = true;
+    } else if (password.length < 6) {
+      this.showFieldError('signup-password', 'Password must be at least 6 characters long');
+      hasErrors = true;
+    }
+
+    if (!confirmPassword) {
+      this.showFieldError('signup-confirm-password', 'Please confirm your password');
+      hasErrors = true;
+    } else if (password !== confirmPassword) {
+      this.showFieldError('signup-confirm-password', 'Passwords do not match');
+      hasErrors = true;
+    }
+
+    if (hasErrors) return;
+
+    // Show loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    // Simulate async operation
+    setTimeout(() => {
+      // Check if user already exists
+      const existingUsers = this.getUsers();
+      if (existingUsers.find(user => user.email === email)) {
+        this.showFieldError('signup-email', 'An account with this email already exists');
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        return;
+      }
+
+      // Create new user
+      const newUser = {
+        id: Date.now().toString(),
+        name,
+        email,
+        password: this.hashPassword(password),
+        createdAt: new Date().toISOString()
+      };
+
+      // Save user
+      existingUsers.push(newUser);
+      localStorage.setItem('users', JSON.stringify(existingUsers));
+
+      // Log in the user
+      this.currentUser = { id: newUser.id, name: newUser.name, email: newUser.email };
+      localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
+
+      this.showSuccess('Account created successfully!');
+      setTimeout(() => {
+        this.showDashboard();
+      }, 1500);
+    }, 1000);
+  }
+
+  handleLogin() {
+    const submitBtn = document.querySelector('#login-form .auth-button');
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    // Clear previous errors
+    this.clearFormErrors('login-form');
+
+    let hasErrors = false;
+
+    if (!email) {
+      this.showFieldError('login-email', 'Email is required');
+      hasErrors = true;
+    }
+
+    if (!password) {
+      this.showFieldError('login-password', 'Password is required');
+      hasErrors = true;
+    }
+
+    if (hasErrors) return;
+
+    // Show loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    // Simulate async operation
+    setTimeout(() => {
+      const users = this.getUsers();
+      const user = users.find(u => u.email === email);
+
+      if (!user || user.password !== this.hashPassword(password)) {
+        this.showFieldError('login-email', 'Invalid email or password');
+        this.showFieldError('login-password', 'Invalid email or password');
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        return;
+      }
+
+      // Log in the user
+      this.currentUser = { id: user.id, name: user.name, email: user.email };
+      localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
+
+      this.showSuccess('Welcome back!');
+      setTimeout(() => {
+        this.showDashboard();
+      }, 1500);
+    }, 800);
+  }
+
+  logout() {
+    this.currentUser = null;
+    localStorage.removeItem('currentUser');
+    this.showLandingPage();
+  }
+
+  getUsers() {
+    try {
+      return JSON.parse(localStorage.getItem('users')) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  hashPassword(password) {
+    // Simple hash function for demo purposes
+    // In production, use proper hashing like bcrypt
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+      const char = password.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return hash.toString();
+  }
+
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  showError(message) {
+    this.showMessage(message, 'error');
+  }
+
+  showSuccess(message) {
+    this.showMessage(message, 'success');
+  }
+
+  showMessage(message, type) {
+    // Remove existing messages
+    const existingMessage = document.querySelector('.auth-message');
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+
+    // Create message element
+    const messageEl = document.createElement('div');
+    messageEl.className = `auth-message ${type}`;
+    messageEl.textContent = message;
+    messageEl.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideInRight 0.3s ease;
+      ${type === 'error' ? 'background: #f44336;' : 'background: #4CAF50;'}
+    `;
+
+    document.body.appendChild(messageEl);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      messageEl.style.animation = 'slideOutRight 0.3s ease';
+      setTimeout(() => messageEl.remove(), 300);
+    }, 3000);
+  }
+
+  showFieldError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    const formGroup = field.closest('.form-group');
+
+    formGroup.classList.add('error');
+
+    let errorEl = formGroup.querySelector('.error-message');
+    if (!errorEl) {
+      errorEl = document.createElement('div');
+      errorEl.className = 'error-message';
+      formGroup.appendChild(errorEl);
+    }
+
+    errorEl.textContent = message;
+  }
+
+  clearFormErrors(formId) {
+    const form = document.getElementById(formId);
+    const errorGroups = form.querySelectorAll('.form-group.error');
+
+    errorGroups.forEach(group => {
+      group.classList.remove('error');
+      const errorMsg = group.querySelector('.error-message');
+      if (errorMsg) {
+        errorMsg.remove();
+      }
+    });
+  }
+
+  showLandingPage() {
+    this.showPage('landing');
+  }
+
+  showDashboard() {
+    this.showPage('dashboard');
+    if (this.currentUser) {
+      const userNameEl = document.getElementById('user-name');
+      if (userNameEl) {
+        userNameEl.textContent = `Welcome, ${this.currentUser.name}`;
+      }
+    }
+    // Initialize task manager for the logged-in user
+    if (window.taskManager) {
+      window.taskManager.setUser(this.currentUser);
+    } else {
+      window.taskManager = new TaskManager(this.currentUser);
+    }
+  }
+
+  showPage(pageId) {
+    const currentPage = document.querySelector('.page:not([style*="display: none"])');
+    const targetPage = document.getElementById(`${pageId}-page`);
+
+    if (!targetPage) return;
+
+    // If there's a current page, fade it out first
+    if (currentPage && currentPage !== targetPage) {
+      currentPage.classList.add('fade-out');
+
+      setTimeout(() => {
+        // Hide all pages
+        const pages = document.querySelectorAll('.page');
+        pages.forEach(page => {
+          page.style.display = 'none';
+          page.classList.remove('fade-out');
+        });
+
+        // Show target page with fade in
+        targetPage.style.display = 'block';
+
+        // Trigger reflow to ensure the transition works
+        targetPage.offsetHeight;
+
+        // Clear any forms when switching pages
+        if (pageId === 'signup' || pageId === 'login') {
+          this.clearFormErrors(pageId + '-form');
+          const form = document.getElementById(pageId + '-form');
+          if (form) form.reset();
+        }
+      }, 250);
+    } else {
+      // No current page, just show the target
+      const pages = document.querySelectorAll('.page');
+      pages.forEach(page => {
+        page.style.display = 'none';
+      });
+      targetPage.style.display = 'block';
+    }
+  }
+}
+
+// Page Navigation Functions
+function showPage(pageId) {
+  if (window.authManager) {
+    window.authManager.showPage(pageId);
+  }
+}
+
+function logout() {
+  if (window.authManager) {
+    window.authManager.logout();
+  }
+}
+
 // Task Management System with Local Storage
 class TaskManager {
-  constructor() {
+  constructor(user = null) {
+    this.user = user;
     this.tasks = this.loadTasks();
     this.taskIdCounter = this.getNextTaskId();
     this.initializeEventListeners();
     this.renderTasks();
   }
 
-  // Load tasks from localStorage
+  setUser(user) {
+    this.user = user;
+    this.tasks = this.loadTasks();
+    this.renderTasks();
+  }
+
+  // Load tasks from localStorage (user-specific)
   loadTasks() {
+    if (!this.user) return [];
+
     try {
-      const savedTasks = localStorage.getItem('todoTasks');
+      const userTasksKey = `todoTasks_${this.user.id}`;
+      const savedTasks = localStorage.getItem(userTasksKey);
       return savedTasks ? JSON.parse(savedTasks) : [];
     } catch (error) {
       console.error('Error loading tasks from localStorage:', error);
@@ -18,24 +383,33 @@ class TaskManager {
     }
   }
 
-  // Save tasks to localStorage
+  // Save tasks to localStorage (user-specific)
   saveTasks() {
+    if (!this.user) return;
+
     try {
-      localStorage.setItem('todoTasks', JSON.stringify(this.tasks));
+      const userTasksKey = `todoTasks_${this.user.id}`;
+      localStorage.setItem(userTasksKey, JSON.stringify(this.tasks));
     } catch (error) {
       console.error('Error saving tasks to localStorage:', error);
     }
   }
 
-  // Get next available task ID
+  // Get next available task ID (user-specific)
   getNextTaskId() {
-    const savedCounter = localStorage.getItem('taskIdCounter');
+    if (!this.user) return 1;
+
+    const userCounterKey = `taskIdCounter_${this.user.id}`;
+    const savedCounter = localStorage.getItem(userCounterKey);
     return savedCounter ? parseInt(savedCounter) + 1 : 1;
   }
 
-  // Save task ID counter
+  // Save task ID counter (user-specific)
   saveTaskIdCounter() {
-    localStorage.setItem('taskIdCounter', this.taskIdCounter.toString());
+    if (!this.user) return;
+
+    const userCounterKey = `taskIdCounter_${this.user.id}`;
+    localStorage.setItem(userCounterKey, this.taskIdCounter.toString());
   }
 
   // Initialize event listeners
@@ -315,9 +689,10 @@ class TaskManager {
   }
 }
 
-// Initialize the task manager when DOM is loaded
+// Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  window.taskManager = new TaskManager();
+  // Initialize authentication manager
+  window.authManager = new AuthManager();
 });
 
 // Add CSS animations for smooth interactions
@@ -340,6 +715,17 @@ style.textContent = `
     }
   }
 
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
   .task-content:focus {
     outline: 2px solid rgba(102, 126, 234, 0.5);
     outline-offset: 2px;
@@ -348,6 +734,10 @@ style.textContent = `
 
   .focused {
     transform: scale(1.02);
+  }
+
+  .auth-message {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   }
 `;
 document.head.appendChild(style);
