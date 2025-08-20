@@ -44,6 +44,9 @@
   * Styling with Tailwind/Bootstrap
   * Optional: Add filters, categories, dark mode
 
+* **Member 5 (Testing)**
+  * Testing backend with Postman / Bruno
+  
 ---
 
 ### 🛠️ Tech Stack (Recommended)
