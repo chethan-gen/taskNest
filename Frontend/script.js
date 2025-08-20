@@ -118,9 +118,9 @@ class AuthManager {
       submitBtn.disabled = false;
 
       this.showSuccess('Account created successfully!');
-      setTimeout(() => {
-        this.showDashboard();
-      }, 1500);
+        setTimeout(() => {
+          showPage('login');
+        }, 1500);
     }, 1000);
   }
 
